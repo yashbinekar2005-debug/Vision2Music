@@ -1,6 +1,6 @@
 import type { AudioRecognitionResult } from "@/lib/types";
 
-const AUDIO_API_URL = process.env.NEXT_PUBLIC_AUDIO_API_URL ?? "http://localhost:8000/api/audio-classify";
+const AUDIO_API_URL = process.env.NEXT_PUBLIC_AUDIO_API_URL ?? "http://localhost:8001/api/audio-classify";
 
 export async function recognizeInstrumentFromAudio(file: File): Promise<AudioRecognitionResult> {
   const formData = new FormData();
