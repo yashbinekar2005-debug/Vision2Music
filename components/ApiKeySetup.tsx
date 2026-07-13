@@ -73,7 +73,7 @@ export function ApiKeySetup({ open, onClose, onSave, onClear, configured }: Prop
 
         <div className="space-y-4">
           <p className="text-sm leading-6 text-ink/65">
-            InstrumentVision uses <strong>Groq&apos;s Llama 3.2 Vision</strong> for image recognition
+            InstrumentVision uses <strong>Groq&apos;s Llama 4 Scout</strong> for image recognition
             and <strong>Whisper</strong> for audio transcription. Get a free API key at
             {" "}
             <a

@@ -73,7 +73,7 @@ export function RecognitionPanel({
         <span className="max-w-xs text-sm leading-6 text-ink/65">
           {mode === "image"
             ? groqConfigured
-              ? "Uses Groq Llama 3.2 Vision for fast, accurate instrument recognition."
+              ? "Uses Groq Llama 4 Scout for fast, accurate instrument recognition."
               : "Uses local ResNet-50 model. Add a Groq API key for better accuracy."
             : groqConfigured
               ? "Uses Groq Whisper to transcribe and identify instruments from audio."

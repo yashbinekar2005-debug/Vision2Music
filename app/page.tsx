@@ -129,7 +129,7 @@ export default function Home() {
     setSelectedInstrument(instrument);
   };
 
-  const imageSource = groqConfigured ? "Groq Llama Vision" : "ResNet-50 (~7 MB q4)";
+  const imageSource = groqConfigured ? "Groq Llama 4 Scout" : "ResNet-50 (~7 MB q4)";
   const audioSource = groqConfigured ? "Groq Whisper" : "Legacy SVC";
 
   return (

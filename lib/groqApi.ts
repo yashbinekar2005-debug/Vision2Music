@@ -3,7 +3,7 @@
 import type { ImageRecognitionResult, RecognitionMatch } from "@/lib/types";
 
 const GROQ_API_BASE = "https://api.groq.com/openai/v1";
-const VISION_MODEL = "llama-3.2-11b-vision-preview";
+const VISION_MODEL = "meta-llama/llama-4-scout-17b-16e-instruct";
 const AUDIO_MODEL = "whisper-large-v3-turbo";
 
 const INSTRUMENTS = ["piano", "guitar", "drums", "violin", "flute"];
