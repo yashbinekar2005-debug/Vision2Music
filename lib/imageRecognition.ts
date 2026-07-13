@@ -1,6 +1,7 @@
 "use client";
 
 import type { ImageRecognitionResult, RecognitionMatch } from "@/lib/types";
+import { classifyWithGroq, hasGroqKey } from "@/lib/groqApi";
 
 const LABELS = ["piano", "guitar", "drums", "violin", "flute"];
 
@@ -121,6 +122,10 @@ function resizeImage(file: File, maxDim: number): Promise<Blob> {
 export async function recognizeInstrumentFromImage(
   file: File,
 ): Promise<ImageRecognitionResult> {
+  if (hasGroqKey()) {
+    return classifyWithGroq(file);
+  }
+
   const resized = await resizeImage(file, 800);
   const arrayBuffer = await resized.arrayBuffer();
   const topMatches = await classifyImage(arrayBuffer, resized.type);
