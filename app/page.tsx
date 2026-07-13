@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { AudioLines, Camera, Sparkles, Settings2, KeyRound } from "lucide-react";
+import { AudioLines, Camera, Sparkles, KeyRound, CheckCircle2, XCircle } from "lucide-react";
 import { InstrumentStage } from "@/components/InstrumentStage";
 import { RecognitionPanel } from "@/components/RecognitionPanel";
 import { ApiKeySetup } from "@/components/ApiKeySetup";
@@ -143,20 +143,13 @@ export default function Home() {
       />
 
       <div className="mx-auto max-w-7xl">
-        <header className="mb-6 flex flex-col gap-4 border-b border-ink/15 pb-5 md:flex-row md:items-end md:justify-between">
+        <header className="mb-4 flex flex-col gap-4 border-b border-ink/15 pb-5 md:flex-row md:items-end md:justify-between">
           <div>
             <div className="mb-3 inline-flex items-center gap-2 rounded-md bg-ink px-3 py-1 text-sm font-bold text-paper">
               <Sparkles size={15} />
               {groqConfigured
                 ? "Groq API-powered instrument recognition"
                 : "Local model (add Groq API key for better accuracy)"}
-              <button
-                onClick={() => setShowKeySetup(true)}
-                className="ml-2 rounded-md bg-paper/20 p-1 hover:bg-paper/30"
-                title="API Key Settings"
-              >
-                <Settings2 size={14} />
-              </button>
             </div>
             <h1 className="text-4xl font-black leading-tight sm:text-5xl">InstrumentVision</h1>
             <p className="mt-2 max-w-2xl text-base leading-7 text-ink/70">
@@ -168,6 +161,44 @@ export default function Home() {
             <StatusChip icon={<AudioLines size={16} />} label="Audio" value={audioSource} />
           </div>
         </header>
+
+        <div className="mb-5">
+          {groqConfigured ? (
+            <div className="flex items-center gap-3 rounded-lg border border-mint/30 bg-mint/10 px-4 py-3">
+              <CheckCircle2 size={18} className="shrink-0 text-mint" />
+              <span className="flex-1 text-sm font-bold text-ink/70">
+                Groq API key is configured &mdash; using Llama 4 Scout for images and Whisper for audio
+              </span>
+              <button
+                onClick={() => setShowKeySetup(true)}
+                className="rounded-md border border-ink/15 px-3 py-1.5 text-xs font-bold text-ink/50 hover:bg-ink/5"
+              >
+                Change Key
+              </button>
+            </div>
+          ) : (
+            <div className="flex items-center gap-3 rounded-lg border border-lacquer/30 bg-lacquer/10 px-4 py-3">
+              <XCircle size={18} className="shrink-0 text-lacquer" />
+              <span className="flex-1 text-sm font-bold text-ink/70">
+                No API key configured &mdash; using local ResNet-50 model.{" "}
+                <button
+                  onClick={() => setShowKeySetup(true)}
+                  className="underline hover:text-ink"
+                >
+                  Add your free Groq API key
+                </button>{" "}
+                for faster and more accurate recognition.
+              </span>
+              <button
+                onClick={() => setShowKeySetup(true)}
+                className="inline-flex items-center gap-1.5 rounded-md bg-ink px-4 py-1.5 text-xs font-bold text-paper hover:bg-ink/80"
+              >
+                <KeyRound size={13} />
+                Add Key
+              </button>
+            </div>
+          )}
+        </div>
 
         <div className="grid gap-5 lg:grid-cols-[390px_minmax(0,1fr)]">
           <RecognitionPanel
@@ -205,15 +236,6 @@ export default function Home() {
                       Upload an image or audio clip to recognize an instrument,
                       then the playable interface will appear here.
                     </p>
-                    {!groqConfigured && (
-                      <button
-                        onClick={() => setShowKeySetup(true)}
-                        className="mt-4 inline-flex items-center gap-2 rounded-md border border-ink/20 px-4 py-2 text-sm font-bold text-ink/60 hover:bg-ink/5"
-                      >
-                        <KeyRound size={14} />
-                        Add Groq API Key for better accuracy
-                      </button>
-                    )}
                   </>
                 ) : modelProgress && modelProgress.pct < 100 ? (
                   <div className="w-full max-w-xs">
