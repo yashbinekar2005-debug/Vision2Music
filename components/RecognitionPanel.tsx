@@ -16,6 +16,8 @@ type Props = {
   onAudioUpload: (file: File) => void;
   onOverride: (instrument: Instrument) => void;
   recognizing?: boolean;
+  groqConfigured?: boolean;
+  onOpenKeySetup?: () => void;
 };
 
 export function RecognitionPanel({
@@ -29,7 +31,9 @@ export function RecognitionPanel({
   onImageUpload,
   onAudioUpload,
   onOverride,
-  recognizing = false
+  recognizing = false,
+  groqConfigured = false,
+  onOpenKeySetup
 }: Props) {
   const inputId = mode === "image" ? "image-upload" : "audio-upload";
 
@@ -68,8 +72,12 @@ export function RecognitionPanel({
         <span className="text-lg font-bold">{mode === "image" ? "Upload instrument image" : "Upload instrument audio"}</span>
         <span className="max-w-xs text-sm leading-6 text-ink/65">
           {mode === "image"
-            ? "Uses EfficientNet-B2 + CLIP models for zero-shot recognition."
-            : "Uses the provided legacy SVC audio model through the FastAPI backend."}
+            ? groqConfigured
+              ? "Uses Groq Llama 3.2 Vision for fast, accurate instrument recognition."
+              : "Uses local ResNet-50 model. Add a Groq API key for better accuracy."
+            : groqConfigured
+              ? "Uses Groq Whisper to transcribe and identify instruments from audio."
+              : "Uses legacy SVC audio model through the FastAPI backend."}
         </span>
       </label>
       <input
@@ -88,7 +96,17 @@ export function RecognitionPanel({
 
       <div className="mt-5 rounded-lg border border-ink/10 bg-paper p-4">
         <div className="mb-3 flex items-center justify-between gap-3">
-          <h3 className="font-bold">Recognition</h3>
+          <h3 className="font-bold">
+            Recognition
+            {!groqConfigured && onOpenKeySetup && (
+              <button
+                onClick={onOpenKeySetup}
+                className="ml-2 rounded-md border border-ink/15 px-2 py-0.5 text-xs font-bold text-ink/50 hover:bg-ink/5"
+              >
+                Add API Key
+              </button>
+            )}
+          </h3>
           <select
             value={selectedInstrument}
             onChange={(event) => onOverride(event.target.value as Instrument)}

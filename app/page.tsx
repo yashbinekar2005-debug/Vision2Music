@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { AudioLines, Camera, Sparkles, Settings2, KeyRound } from "lucide-react";
 import { InstrumentStage } from "@/components/InstrumentStage";
 import { RecognitionPanel } from "@/components/RecognitionPanel";
+import { ApiKeySetup } from "@/components/ApiKeySetup";
 import { recognizeInstrumentFromAudio } from "@/lib/audioApi";
 import {
   recognizeInstrumentFromImage,
@@ -11,7 +12,7 @@ import {
   warmUpModel,
   setProgressCallback,
 } from "@/lib/imageRecognition";
-import { setGroqApiKey, hasGroqKey } from "@/lib/groqApi";
+import { setGroqApiKey, hasGroqKey, clearGroqApiKey } from "@/lib/groqApi";
 import type { AudioRecognitionResult, ImageRecognitionResult, Instrument } from "@/lib/types";
 import { INSTRUMENT_LABELS, isPlayableInstrument } from "@/lib/types";
 
@@ -25,12 +26,17 @@ export default function Home() {
   const [error, setError] = useState<string | null>(null);
   const [recognizing, setRecognizing] = useState(false);
   const [modelProgress, setModelProgress] = useState<{ pct: number; text: string } | null>(null);
-  const [showSettings, setShowSettings] = useState(false);
-  const [apiKey, setApiKey] = useState("");
+  const [showKeySetup, setShowKeySetup] = useState(false);
   const [groqConfigured, setGroqConfigured] = useState(false);
+  const [initialCheck, setInitialCheck] = useState(true);
 
   useEffect(() => {
-    setGroqConfigured(hasGroqKey());
+    const has = hasGroqKey();
+    setGroqConfigured(has);
+    if (!has) {
+      setShowKeySetup(true);
+    }
+    setInitialCheck(false);
   }, []);
 
   useEffect(() => {
@@ -46,19 +52,15 @@ export default function Home() {
     }
   }, [imageResult, recognizing, mode]);
 
-  function handleSaveKey() {
-    const trimmed = apiKey.trim();
-    if (trimmed) {
-      setGroqApiKey(trimmed);
-      setGroqConfigured(true);
-      setShowSettings(false);
-    }
+  function handleSaveKey(key: string) {
+    setGroqApiKey(key);
+    setGroqConfigured(true);
   }
 
   function handleClearKey() {
-    setApiKey("");
-    setGroqApiKey("");
+    clearGroqApiKey();
     setGroqConfigured(false);
+    warmUpModel().catch(() => {});
   }
 
   async function analyzeImageWithTimeout() {
@@ -132,6 +134,14 @@ export default function Home() {
 
   return (
     <main className="min-h-screen px-4 py-5 sm:px-6 lg:px-8">
+      <ApiKeySetup
+        open={showKeySetup && !initialCheck}
+        onClose={() => setShowKeySetup(false)}
+        onSave={handleSaveKey}
+        onClear={handleClearKey}
+        configured={groqConfigured}
+      />
+
       <div className="mx-auto max-w-7xl">
         <header className="mb-6 flex flex-col gap-4 border-b border-ink/15 pb-5 md:flex-row md:items-end md:justify-between">
           <div>
@@ -139,11 +149,11 @@ export default function Home() {
               <Sparkles size={15} />
               {groqConfigured
                 ? "Groq API-powered instrument recognition"
-                : "ResNet-50 local model (add Groq API key for better accuracy)"}
+                : "Local model (add Groq API key for better accuracy)"}
               <button
-                onClick={() => setShowSettings(!showSettings)}
+                onClick={() => setShowKeySetup(true)}
                 className="ml-2 rounded-md bg-paper/20 p-1 hover:bg-paper/30"
-                title="Settings"
+                title="API Key Settings"
               >
                 <Settings2 size={14} />
               </button>
@@ -159,42 +169,6 @@ export default function Home() {
           </div>
         </header>
 
-        {showSettings && (
-          <div className="mb-6 rounded-lg border border-ink/15 bg-white/80 p-4">
-            <div className="flex items-center gap-3">
-              <KeyRound size={18} className="text-ink/50" />
-              <span className="text-sm font-bold text-ink/70">Groq API Key</span>
-            </div>
-            <p className="mb-3 mt-1 text-xs text-ink/50">
-              Get a free key at console.groq.com. Uses Llama-3.2-11b-Vision for image and Whisper for audio.
-            </p>
-            <div className="flex gap-2">
-              <input
-                type="password"
-                value={apiKey}
-                onChange={(e) => setApiKey(e.target.value)}
-                placeholder={groqConfigured ? "Key is set (enter new to replace)" : "gsk_..."}
-                className="flex-1 rounded-md border border-ink/20 bg-white px-3 py-2 text-sm outline-none focus:border-ink/50"
-              />
-              <button
-                onClick={handleSaveKey}
-                disabled={!apiKey.trim()}
-                className="rounded-md bg-ink px-4 py-2 text-sm font-bold text-paper hover:bg-ink/80 disabled:opacity-40"
-              >
-                Save
-              </button>
-              {groqConfigured && (
-                <button
-                  onClick={handleClearKey}
-                  className="rounded-md border border-ink/20 px-4 py-2 text-sm font-bold text-ink/60 hover:bg-ink/5"
-                >
-                  Clear
-                </button>
-              )}
-            </div>
-          </div>
-        )}
-
         <div className="grid gap-5 lg:grid-cols-[390px_minmax(0,1fr)]">
           <RecognitionPanel
             mode={mode}
@@ -208,6 +182,8 @@ export default function Home() {
             onAudioUpload={onAudioUpload}
             onOverride={handleInstrumentSelect}
             recognizing={recognizing}
+            groqConfigured={groqConfigured}
+            onOpenKeySetup={() => setShowKeySetup(true)}
           />
 
           <div className="min-w-0">
@@ -231,10 +207,10 @@ export default function Home() {
                     </p>
                     {!groqConfigured && (
                       <button
-                        onClick={() => setShowSettings(true)}
-                        className="mt-4 rounded-md border border-ink/20 px-4 py-2 text-sm font-bold text-ink/60 hover:bg-ink/5"
+                        onClick={() => setShowKeySetup(true)}
+                        className="mt-4 inline-flex items-center gap-2 rounded-md border border-ink/20 px-4 py-2 text-sm font-bold text-ink/60 hover:bg-ink/5"
                       >
-                        <KeyRound size={14} className="mr-1.5 inline" />
+                        <KeyRound size={14} />
                         Add Groq API Key for better accuracy
                       </button>
                     )}
