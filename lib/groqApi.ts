@@ -27,7 +27,41 @@ export function hasGroqKey(): boolean {
   return getApiKey() !== null;
 }
 
-function fileToBase64(file: File): Promise<string> {
+function resizeImage(file: File, maxDim: number): Promise<Blob> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      let { width, height } = img;
+      if (width <= maxDim && height <= maxDim) {
+        resolve(file);
+        return;
+      }
+      if (width > height) {
+        height = Math.round((height / width) * maxDim);
+        width = maxDim;
+      } else {
+        width = Math.round((width / height) * maxDim);
+        height = maxDim;
+      }
+      const canvas = document.createElement("canvas");
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext("2d")!;
+      ctx.drawImage(img, 0, 0, width, height);
+      canvas.toBlob((b) => resolve(b!), file.type, 0.85);
+    };
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      reject(new Error("Failed to load image"));
+    };
+    img.src = url;
+  });
+}
+
+async function fileToBase64(file: File): Promise<string> {
+  const resized = await resizeImage(file, 1024);
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = () => {
@@ -35,7 +69,7 @@ function fileToBase64(file: File): Promise<string> {
       resolve(result.split(",")[1]);
     };
     reader.onerror = () => reject(new Error("Failed to read file"));
-    reader.readAsDataURL(file);
+    reader.readAsDataURL(resized);
   });
 }
 
