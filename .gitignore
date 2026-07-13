@@ -1,0 +1,10 @@
+.next/
+node_modules/
+out/
+dist/
+*.log
+.env
+.env.local
+backend/__pycache__/
+backend/uploads/
+backend/.venv/

@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cd /d C:\\\\Users\\\\YASH BINEKAR\\\\OneDrive\\\\Desktop\\\\Pictures\\\\Saved Pictures\\\\AiInstrumentSimulation\\\\backend)",
+      "Bash(pip install *)",
+      "WebFetch(domain:localhost)"
+    ]
+  }
+}

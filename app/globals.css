@@ -1,0 +1,57 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+  --grain: radial-gradient(circle at 20% 20%, rgba(255, 255, 255, 0.72), transparent 28%),
+    linear-gradient(135deg, #f7f3ea 0%, #d8b46a 48%, #87b8a0 100%);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--grain);
+  color: #171717;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+button,
+input,
+select {
+  font: inherit;
+}
+
+button:focus-visible,
+input:focus-visible,
+select:focus-visible {
+  outline: 3px solid rgba(49, 74, 97, 0.45);
+  outline-offset: 2px;
+}
+
+.wood-texture {
+  background:
+    linear-gradient(90deg, rgba(255, 255, 255, 0.08), transparent 22%, rgba(0, 0, 0, 0.08) 48%, transparent 72%),
+    repeating-linear-gradient(12deg, #6d392d 0 9px, #7d4638 9px 18px, #4b2d2a 18px 28px);
+}
+
+.string-line {
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.5), #3a302e, rgba(255, 255, 255, 0.46));
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
