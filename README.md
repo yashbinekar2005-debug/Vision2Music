@@ -2,7 +2,7 @@
 
 Upload an instrument photo or short audio clip, then play the detected instrument directly in the browser.
 
-**Image recognition** uses OpenAI CLIP zero-shot classification (no training needed). **Audio recognition** uses a legacy SVC model (note: model file not included). Built with Next.js 14, FastAPI, and Tone.js.
+**Image recognition** runs entirely client-side via a ResNet-50 web worker, with an optional Groq API upgrade (`qwen/qwen3.6-27b` vision) for higher accuracy. **Audio recognition** uses Groq Whisper (`whisper-large-v3-turbo`) when an API key is configured, otherwise falls back to a legacy FastAPI backend. Built with Next.js 14 and Tone.js.
 
 ## Supported Instruments
 
@@ -13,19 +13,8 @@ Piano, Guitar, Drums, Violin, Flute — each with a custom playable interface.
 ### Prerequisites
 
 - Node.js 18+
-- Python 3.12+
-- Windows (paths use PowerShell conventions)
 
-### Backend
-
-```powershell
-cd backend
-.venv\Scripts\activate
-pip install -r requirements.txt
-uvicorn main:app --host 0.0.0.0 --port 8000 --reload
-```
-
-### Frontend
+### Frontend (standalone — image recognition works without a backend)
 
 ```powershell
 npm install
@@ -34,11 +23,29 @@ npm run dev
 
 Open **http://localhost:3000** in your browser.
 
+### Backend (optional — only needed for audio without Groq)
+
+```powershell
+cd backend
+.venv\Scripts\activate
+pip install -r requirements.txt
+uvicorn main:app --host 0.0.0.0 --port 8001 --reload
+```
+
+## Groq API Key (Recommended)
+
+Get a free key at [console.groq.com](https://console.groq.com) and enter it in the app to unlock:
+- **Image recognition** via `qwen/qwen3.6-27b` vision (more accurate than ResNet-50)
+- **Audio transcription** via `whisper-large-v3-turbo`
+
+Without a key, image recognition falls back to the local ResNet-50 web worker, and audio recognition requires the FastAPI backend at port 8001.
+
 ## Architecture
 
 ```
 app/page.tsx              Main page with recognition + instrument UI
 components/
+  ApiKeySetup.tsx         Groq API key modal with validation
   InstrumentStage.tsx     Playable instrument wrapper (switches between instruments)
   RecognitionPanel.tsx    Upload area + recognition results
   instruments/
@@ -48,71 +55,23 @@ components/
     ViolinInstrument.tsx  String controls + pitch bend
     FluteInstrument.tsx   Tone-hole controls
 lib/
-  audioApi.ts             Calls /api/audio-classify on the backend
-  imageRecognition.ts     Calls /classify on the backend
+  groqApi.ts              Groq API client (vision + Whisper)
+  classifier.worker.ts    ResNet-50 web worker (fallback image recognition)
+  imageRecognition.ts     Routes to Groq or web worker based on key presence
+  audioApi.ts             Groq Whisper or legacy backend fallback
   soundEngine.ts          Tone.js sampler/synth setup
   types.ts                Shared TypeScript types
 backend/
-  main.py                 FastAPI server (port 8000)
-  models/
-    classifier.py         CLIP zero-shot image classification
-    clip_analyzer.py      CLIP variant analysis (grand vs upright piano, etc.)
-    gpt_vision.py         GPT-4o Vision deep analysis (requires OPENAI_API_KEY)
-  utils/
-    preprocess.py         Audio MFCC feature extraction (legacy)
-    config_builder.py     Instrument config builder
-  data/class_names.json   Instrument class labels
+  main.py                 FastAPI server (port 8001, legacy audio support)
 ```
-
-## API Endpoints
-
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/health` | GET | Health check, model load status |
-| `/classify` | POST | Image -> instrument classification (multipart file) |
-| `/analyze` | POST | Image -> deep analysis via GPT-4o Vision (requires `OPENAI_API_KEY`) |
-| `/api/audio-classify` | POST | Audio -> instrument classification using legacy SVC model |
-| `/recognize` | POST | Combined endpoint (image or audio) |
-
-### Classify Response
-
-```json
-{
-  "instrument": "piano",
-  "confidence": 0.92,
-  "topMatches": [
-    {"label": "piano", "score": 0.92},
-    {"label": "guitar", "score": 0.04},
-    {"label": "drums", "score": 0.02}
-  ]
-}
-```
-
-## Image Recognition
-
-Uses **CLIP zero-shot classification** (`openai/clip-vit-base-patch16`) running on the FastAPI backend. Matches uploaded images against instrument prompts. No fine-tuning required — works out of the box.
-
-## Audio Recognition
-
-The legacy SVC audio model (`music-instrument-classifier-master/last_svc.model`) is **not included** in this repository. Without it, the `/api/audio-classify` endpoint returns an informative message. To use audio recognition, place the model file at:
-
-```
-backend/music-instrument-classifier-master/last_svc.model
-```
-
-The model supports: cello, clarinet, flute, violin, piano (legacy labels).
-
-## GPT-4o Vision Analysis (Optional)
-
-Set the `OPENAI_API_KEY` environment variable to enable deep instrument analysis via the `/analyze` endpoint, which returns detailed configuration (variant, strings, octave range, tuning, pads).
 
 ## Environment Variables
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `NEXT_PUBLIC_IMAGE_API_URL` | `http://localhost:8000` | Backend URL for image classification |
-| `NEXT_PUBLIC_AUDIO_API_URL` | `http://localhost:8000/api/audio-classify` | Backend URL for audio classification |
-| `OPENAI_API_KEY` | — | API key for GPT-4o Vision (optional) |
+| `NEXT_PUBLIC_GROQ_API_KEY` | — | Groq API key (can also be set in-app via the key setup modal) |
+| `NEXT_PUBLIC_AUDIO_API_URL` | `http://localhost:8001/api/audio-classify` | Backend URL for legacy audio classification |
+| `NEXT_PUBLIC_IMAGE_API_URL` | `http://localhost:8001` | Backend URL (legacy — image recognition is client-side) |
 
 ## Sound Engine
 
@@ -126,13 +85,14 @@ Uses **Tone.js** with:
 ## Tech Stack
 
 - **Frontend**: Next.js 14, React 18, TypeScript, Tailwind CSS, Tone.js, Lucide React
-- **Backend**: FastAPI, Uvicorn, PyTorch, Transformers, scikit-learn, librosa
-- **Recognition**: OpenAI CLIP (zero-shot image classification), legacy SVC (audio)
+- **Image Recognition**: Groq API (Qwen 3.6 27B vision) or client-side ResNet-50 (Transformers.js)
+- **Audio Recognition**: Groq Whisper API or legacy FastAPI backend
+- **Backend** (optional): FastAPI, Uvicorn
 
 ## Project Status
 
-- [x] Image recognition (CLIP zero-shot)
+- [x] Client-side image recognition (ResNet-50 web worker)
+- [x] Groq API integration (vision + Whisper, optional)
 - [x] Five playable instruments
-- [x] Legacy audio endpoint wrapper
-- [ ] Audio model file (not included — must be provided separately)
-- [ ] GPT-4o Vision analysis (requires API key)
+- [x] Groq API key setup modal with validation
+- [ ] Audio model file (not included — must be provided separately for legacy backend)
