@@ -3,7 +3,7 @@
 import type { ImageRecognitionResult, RecognitionMatch } from "@/lib/types";
 
 const GROQ_API_BASE = "https://api.groq.com/openai/v1";
-const VISION_MODEL = "meta-llama/llama-4-scout-17b-16e-instruct";
+const VISION_MODEL = "qwen/qwen3.6-27b";
 const AUDIO_MODEL = "whisper-large-v3-turbo";
 
 const INSTRUMENTS = ["piano", "guitar", "drums", "violin", "flute"];
@@ -107,7 +107,7 @@ export async function classifyWithGroq(
       },
     ],
     temperature: 0,
-    max_tokens: 150,
+    max_tokens: 500,
   };
 
   const response = await fetch(`${GROQ_API_BASE}/chat/completions`, {
